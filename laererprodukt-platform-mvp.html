@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lærerværktøjer — Feedback-promptgenerator</title>
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --surface: #fffdf8;
+      --surface-2: #f1ece3;
+      --ink: #17211c;
+      --muted: #627069;
+      --soft: #d9d0c2;
+      --line: #e2d8c9;
+      --accent: #1f6f5b;
+      --accent-2: #d97706;
+      --accent-soft: #dceee8;
+      --danger: #8a341f;
+      --danger-soft: #fae8dc;
+      --success: #246b46;
+      --shadow: 0 18px 45px rgba(23, 33, 28, 0.10);
+      --shadow-soft: 0 8px 22px rgba(23, 33, 28, 0.07);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --max: 1160px;
+      --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(31, 111, 91, 0.12), transparent 28rem),
+        radial-gradient(circle at 90% 8%, rgba(217, 119, 6, 0.13), transparent 24rem),
+        var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+
+    a { color: inherit; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(16px);
+      background: rgba(247, 244, 238, 0.78);
+      border-bottom: 1px solid rgba(226, 216, 201, 0.85);
+    }
+
+    .nav {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 14px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), #174638);
+      box-shadow: 0 8px 18px rgba(31, 111, 91, 0.24);
+      font-size: 18px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      padding: 9px 11px;
+      border-radius: 999px;
+    }
+    .nav-links a:hover, .nav-links a:focus-visible {
+      color: var(--ink);
+      background: rgba(31, 111, 91, 0.09);
+      outline: none;
+    }
+
+    .container {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 0 22px;
+    }
+
+    .hero {
+      padding: 72px 0 42px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(320px, 0.78fr);
+      gap: 34px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 11px;
+      border: 1px solid rgba(31, 111, 91, 0.18);
+      border-radius: 999px;
+      background: rgba(220, 238, 232, 0.65);
+      color: #174638;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    h1, h2, h3 { line-height: 1.08; letter-spacing: -0.055em; margin: 0; }
+    h1 {
+      margin-top: 18px;
+      font-size: clamp(42px, 7vw, 78px);
+      max-width: 900px;
+    }
+    h2 { font-size: clamp(30px, 4vw, 48px); }
+    h3 { font-size: 23px; letter-spacing: -0.035em; }
+
+    .lead {
+      margin: 20px 0 0;
+      max-width: 690px;
+      color: var(--muted);
+      font-size: clamp(18px, 2vw, 21px);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .button {
+      appearance: none;
+      border: 0;
+      cursor: pointer;
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+      font-family: inherit;
+      font-size: 15px;
+    }
+    .button:hover { transform: translateY(-1px); }
+    .button:focus-visible { outline: 3px solid rgba(31, 111, 91, 0.28); outline-offset: 2px; }
+    .button.primary { color: white; background: var(--accent); box-shadow: 0 12px 22px rgba(31, 111, 91, 0.23); }
+    .button.primary:hover { background: #185846; }
+    .button.secondary { color: var(--ink); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-soft); }
+    .button.ghost { color: var(--accent); background: rgba(31, 111, 91, 0.08); }
+    .button.full { width: 100%; border-radius: 16px; }
+
+    .hero-card {
+      background: rgba(255, 253, 248, 0.88);
+      border: 1px solid rgba(226, 216, 201, 0.95);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .product-card {
+      background: linear-gradient(180deg, #fffdf8, #f6efe5);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .product-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .tag {
+      white-space: nowrap;
+      color: #174638;
+      background: var(--accent-soft);
+      border: 1px solid rgba(31, 111, 91, 0.15);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .mini-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: var(--muted);
+    }
+    .mini-list li { display: flex; gap: 9px; align-items: flex-start; }
+    .check { color: var(--accent); font-weight: 900; }
+
+    .section { padding: 54px 0; }
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 22px;
+      margin-bottom: 22px;
+    }
+    .section-heading p { margin: 10px 0 0; color: var(--muted); max-width: 660px; }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(255, 253, 248, 0.78);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-soft);
+    }
+    .card p { color: var(--muted); margin: 10px 0 0; }
+
+    .generator-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel-head {
+      padding: 22px 22px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.56), rgba(241,236,227,.50));
+    }
+    .panel-head p { margin: 8px 0 0; color: var(--muted); }
+    .panel-body { padding: 22px; }
+
+    form { display: grid; gap: 16px; }
+    [hidden] { display: none !important; }
+    label { font-weight: 800; font-size: 14px; display: block; margin-bottom: 7px; }
+    .hint { color: var(--muted); font-size: 13px; margin-top: 5px; }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #d7ccbc;
+      background: #fffefa;
+      color: var(--ink);
+      border-radius: 14px;
+      min-height: 46px;
+      padding: 12px 13px;
+      font: inherit;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    textarea { min-height: 160px; resize: vertical; }
+    input:focus, select:focus, textarea:focus {
+      border-color: rgba(31, 111, 91, 0.66);
+      box-shadow: 0 0 0 4px rgba(31, 111, 91, 0.13);
+      background: white;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .warning {
+      border: 1px solid rgba(138, 52, 31, 0.18);
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-radius: 16px;
+      padding: 13px 14px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .preset-box {
+      border: 1px solid rgba(31, 111, 91, 0.16);
+      background: rgba(220, 238, 232, 0.42);
+      border-radius: 18px;
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .preset-actions {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .mini-button {
+      appearance: none;
+      border: 1px solid rgba(31, 111, 91, 0.22);
+      background: #fffefa;
+      color: var(--accent);
+      min-height: 46px;
+      border-radius: 14px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    .mini-button:hover { background: white; border-color: rgba(31, 111, 91, 0.46); }
+    .mini-button.danger { color: var(--danger); border-color: rgba(138, 52, 31, 0.24); }
+    .preset-status {
+      color: var(--success);
+      font-size: 13px;
+      font-weight: 800;
+      min-height: 18px;
+    }
+    .preset-status.error { color: var(--danger); }
+
+    .start-card {
+      border: 1px solid rgba(31, 111, 91, 0.18);
+      background: linear-gradient(180deg, rgba(255, 253, 248, 0.92), rgba(220, 238, 232, 0.55));
+      border-radius: 18px;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .start-card p { margin: 0; color: var(--muted); }
+    .start-actions, .assignment-flow, .student-flow {
+      display: grid;
+      gap: 16px;
+    }
+    .start-action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .saved-assignment-picker {
+      border-top: 1px solid rgba(31, 111, 91, 0.16);
+      padding-top: 14px;
+    }
+    .step-label {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #fffefa;
+      color: var(--accent);
+      border: 1px solid rgba(31, 111, 91, 0.18);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .02em;
+    }
+    .student-step.locked {
+      opacity: .58;
+      filter: grayscale(.15);
+    }
+    .student-step.locked textarea {
+      cursor: not-allowed;
+      background: #f1ece3;
+    }
+    .locked-note {
+      display: none;
+      border: 1px dashed rgba(31, 111, 91, 0.32);
+      border-radius: 14px;
+      padding: 11px 12px;
+      background: rgba(220, 238, 232, 0.38);
+      color: #174638;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .student-step.locked .locked-note { display: block; }
+    .button:disabled, .mini-button:disabled {
+      cursor: not-allowed;
+      transform: none;
+      opacity: .55;
+      box-shadow: none;
+    }
+
+    .pdf-attachments {
+      border: 1px solid rgba(31, 111, 91, 0.16);
+      background: rgba(220, 238, 232, 0.30);
+      border-radius: 18px;
+      padding: 14px;
+    }
+    .pdf-attachment-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .pdf-page-thumb {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffefa;
+    }
+    .pdf-page-thumb img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      object-fit: cover;
+      border-bottom: 1px solid var(--line);
+    }
+    .pdf-page-thumb span {
+      display: block;
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .radio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+    }
+    .choice {
+      position: relative;
+    }
+    .choice input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .choice span {
+      min-height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 1px solid #d7ccbc;
+      border-radius: 14px;
+      padding: 10px;
+      color: var(--muted);
+      background: #fffefa;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .choice input:checked + span {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: #174638;
+    }
+    .choice input:focus-visible + span { outline: 3px solid rgba(31, 111, 91, 0.22); outline-offset: 2px; }
+
+    .output-wrap { display: grid; gap: 14px; }
+    #promptOutput {
+      min-height: 560px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 13.5px;
+      line-height: 1.55;
+      background: #111a16;
+      color: #f6f2ea;
+      border-color: #111a16;
+    }
+    #promptOutput::selection { background: rgba(220, 238, 232, .28); }
+
+    .output-actions {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .status {
+      color: var(--success);
+      font-size: 14px;
+      font-weight: 800;
+      min-height: 22px;
+    }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .roadmap-list {
+      margin: 14px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    .roadmap-list li { margin: 7px 0; }
+
+    .pricing-note {
+      background: #17211c;
+      color: #f7f4ee;
+      border-radius: var(--radius-xl);
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+    .pricing-note p { color: rgba(247, 244, 238, 0.76); }
+
+    footer {
+      padding: 34px 0 54px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .small-caps {
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: .11em;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    @media (max-width: 920px) {
+      .hero, .generator-shell, .roadmap { grid-template-columns: 1fr; }
+      .hero { padding-top: 48px; }
+      .grid-3 { grid-template-columns: 1fr; }
+      #promptOutput { min-height: 420px; }
+    }
+
+    @media (max-width: 650px) {
+      .nav { align-items: flex-start; }
+      .nav-links { display: none; }
+      .form-row, .radio-grid, .output-actions, .preset-actions, .start-action-buttons, .pdf-attachment-grid { grid-template-columns: 1fr; }
+      .hero-card, .panel-body, .panel-head { padding: 18px; }
+      .section { padding: 38px 0; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="nav" aria-label="Hovednavigation">
+      <div class="brand" aria-label="Lærerværktøjer">
+        <div class="brand-mark" aria-hidden="true">L</div>
+        <span>Lærerværktøjer</span>
+      </div>
+      <div class="nav-links">
+        <a href="#platform">Platform</a>
+        <a href="#generator">Generator</a>
+        <a href="#fremtid">Fremtidige produkter</a>
+        <a href="#model">Forretningsmodel</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="container hero" id="platform">
+      <div>
+        <span class="eyebrow">Danske digitale værktøjer til travle lærere</span>
+        <h1>Praktiske AI-værktøjer, der sparer tid uden at svække fagligheden.</h1>
+        <p class="lead">En personlig produktplatform for undervisere i folkeskolen. Første værktøj hjælper lærere i udskolingen med at lave en professionel prompt til feedback på elevtekster — lokalt i browseren og uden login.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#generator">Prøv feedback-generatoren</a>
+          <a class="button secondary" href="#fremtid">Se fremtidige produkter</a>
+        </div>
+      </div>
+
+      <aside class="hero-card" aria-label="Første produkt">
+        <div class="product-card">
+          <div class="product-header">
+            <div>
+              <div class="small-caps">Første gratis værktøj</div>
+              <h3>Feedback-promptgenerator</h3>
+            </div>
+            <span class="tag">MVP</span>
+          </div>
+          <p>Udfyld fag, klassetrin, genre, feedbackniveau og fokuspunkter. Generatoren samler en færdig prompt, som kan kopieres til ChatGPT, Claude, Gemini eller et andet AI-værktøj.</p>
+          <ul class="mini-list">
+            <li><span class="check">✓</span><span>Kører lokalt i browseren — ingen elevtekst sendes til denne side.</span></li>
+            <li><span class="check">✓</span><span>Dansk brugerflade og dansk skolekontekst.</span></li>
+            <li><span class="check">✓</span><span>Bygget så flere produkter kan tilføjes senere.</span></li>
+          </ul>
+          <a class="button primary full" href="#generator">Lav en prompt</a>
+        </div>
+      </aside>
+    </section>
+
+    <section class="container section" aria-labelledby="struktur-title">
+      <div class="section-heading">
+        <div>
+          <div class="small-caps">Simpel sidestruktur</div>
+          <h2 id="struktur-title">Start lille. Gør platformen udvidelig.</h2>
+          <p>Første version bør ikke være en stor webshop. Den bør være en troværdig produktside med ét brugbart gratisværktøj, en tydelig produktretning og mulighed for at samle e-mails eller teste interesse senere.</p>
+        </div>
+      </div>
+      <div class="grid-3">
+        <article class="card">
+          <h3>1. Forside</h3>
+          <p>Kort positionering, målgruppe, formål og første produktkort. Fokus: læreren skal hurtigt forstå, at siden løser konkrete hverdagsproblemer.</p>
+        </article>
+        <article class="card">
+          <h3>2. Gratis værktøj</h3>
+          <p>Feedback-promptgeneratoren fungerer som prøveprodukt og tillidsbygger. Den skal være så nyttig, at lærere får lyst til flere produkter.</p>
+        </article>
+        <article class="card">
+          <h3>3. Fremtidig butik</h3>
+          <p>Senere kan du tilføje promptpakker, PDF-materialer, Google Docs-skabeloner, årsplansværktøjer og premiumgeneratorer.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="container section" id="generator" aria-labelledby="generator-title">
+      <div class="section-heading">
+        <div>
+          <div class="small-caps">Feedback-promptgenerator</div>
+          <h2 id="generator-title">Lav en klar prompt til feedback på elevtekster.</h2>
+          <p>Udfyld felterne. Kopiér prompten. Sæt den ind i det AI-værktøj, din skole eller kommune tillader.</p>
+        </div>
+      </div>
+
+      <div class="generator-shell">
+        <section class="panel" aria-label="Generatorformular">
+          <div class="panel-head">
+            <h3>1. Vælg rammerne</h3>
+            <p>Jo mere præcise rammer, jo bedre og mere brugbar feedback.</p>
+          </div>
+          <div class="panel-body">
+            <form id="promptForm">
+              <div class="start-card" id="startCard" aria-label="Start her">
+                <span class="step-label">Start her</span>
+                <h3>Opret eller vælg en opgave først</h3>
+                <p>Først opretter eller vælger du selve opgaven som et preset. Preset'et gemmes uden elevtekst, så du kan åbne det igen senere og bruge det med mange elever.</p>
+                <div class="start-actions">
+                  <div class="start-action-buttons">
+                    <button type="button" class="button primary full" id="newAssignmentBtn">+ Opret ny opgave</button>
+                    <button type="button" class="button secondary full" id="pdfImportBtn">Opret fra PDF</button>
+                  </div>
+                  <input id="pdfImportInput" type="file" accept="application/pdf,.pdf" hidden />
+                  <div class="preset-status" id="pdfImportStatus" aria-live="polite"></div>
+                  <div class="saved-assignment-picker" id="savedAssignmentPicker" hidden>
+                    <label for="savedAssignments">Eller vælg en gemt opgave</label>
+                    <select id="savedAssignments">
+                      <option value="">Ingen gemte opgaver endnu</option>
+                    </select>
+                    <div class="hint">Elevteksten gemmes ikke. Kun opgaven og dine indstillinger gemmes lokalt i browseren.</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="assignment-flow" id="assignmentFlow" hidden>
+                <div class="preset-box" aria-label="Opgavens navn og gem">
+                  <div class="preset-actions">
+                    <div>
+                      <label for="assignmentName">Navn på opgave</label>
+                      <input id="assignmentName" type="text" placeholder="Giv opgaven et navn" />
+                    </div>
+                    <button type="button" class="mini-button" id="saveAssignmentBtn">Opret opgave</button>
+                    <button type="button" class="mini-button danger" id="deleteAssignmentBtn">Slet valgt</button>
+                  </div>
+                  <div class="hint">Gem opgavebeskrivelsen sammen med fag, klassetrin, genre, feedbackniveau og de øvrige indstillinger. Elevtekst gemmes aldrig i preset'et.</div>
+                  <div class="preset-status" id="assignmentStatus" aria-live="polite"></div>
+                </div>
+
+                <div>
+                  <label for="assignmentDescription">Opgavebeskrivelse</label>
+                  <textarea id="assignmentDescription" placeholder="Indsæt opgaveformuleringen her, fx krav til genre, længde, formål, vurderingskriterier eller særlige mål."></textarea>
+                  <div class="hint">Opgavebeskrivelsen er en del af preset'et. Du kan oprette opgaven uden elevtekst og indsætte elevtekster senere.</div>
+                </div>
+
+                <div class="pdf-attachments" id="pdfAttachmentSection" hidden>
+                  <label>PDF-sidebilleder</label>
+                  <div class="hint" id="pdfAttachmentHint">Sidebillederne kan bruges som visuelt referencegrundlag, hvis opgaven indeholder figurer, billeder eller layout, der ikke kan læses som tekst.</div>
+                  <div class="pdf-attachment-grid" id="pdfAttachmentGrid"></div>
+                </div>
+
+                <div class="form-row">
+                  <div>
+                    <label for="subject">Fag</label>
+                    <select id="subject">
+                      <option>Dansk</option>
+                      <option>Engelsk</option>
+                      <option>Tysk/fransk</option>
+                      <option>Historie</option>
+                      <option>Samfundsfag</option>
+                      <option>Kristendomskundskab</option>
+                      <option>Naturfag</option>
+                      <option>Andet fag</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="grade">Klassetrin</label>
+                    <select id="grade">
+                      <option>7. klasse</option>
+                      <option>8. klasse</option>
+                      <option>9. klasse</option>
+                      <option>10. klasse</option>
+                      <option>5. klasse</option>
+                      <option>6. klasse</option>
+                      <option>Ukendt/blandet niveau</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label>Feedbackniveau</label>
+                  <div class="radio-grid" role="radiogroup" aria-label="Feedbackniveau">
+                    <label class="choice"><input type="radio" name="feedbackLevel" value="kort" checked><span>Kort feedback</span></label>
+                    <label class="choice"><input type="radio" name="feedbackLevel" value="almindelig"><span>Almindelig</span></label>
+                    <label class="choice"><input type="radio" name="feedbackLevel" value="grundig"><span>Grundig</span></label>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div>
+                    <label for="audience">Feedbacken skal være til</label>
+                    <select id="audience">
+                      <option value="eleven">Eleven</option>
+                      <option value="laereren">Læreren</option>
+                      <option value="begge">Både læreren og eleven</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="gradeEstimate">Vejledende karakterbud</label>
+                    <select id="gradeEstimate">
+                      <option value="nej">Nej, ingen karakter</option>
+                      <option value="ja">Ja, giv et forsigtigt vejledende bud</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div>
+                    <label for="genreMode">Genre</label>
+                    <select id="genreMode">
+                      <option value="manual">Jeg skriver genre selv</option>
+                      <option value="unknown">Ukendt genre — bed AI’en gætte forsigtigt</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="genre">Genre/teksttype</label>
+                    <input id="genre" type="text" placeholder="Fx essay, novelle, debatindlæg, analyserende artikel" value="argumenterende tekst" />
+                  </div>
+                </div>
+
+                <div>
+                  <label for="focusPoints">Særlige fokuspunkter</label>
+                  <textarea id="focusPoints" placeholder="Fx grammatik, struktur, fagligt indhold, sprog, argumentation, genrekrav, forbedringsforslag">struktur, argumentation, sprog og konkrete forbedringsforslag</textarea>
+                </div>
+              </div>
+
+              <div class="student-flow" id="studentFlow" hidden>
+                <div class="student-step locked" id="studentStep">
+                  <label for="studentText">Elevtekst</label>
+                  <div class="locked-note" id="studentLockedNote">Opret eller vælg en opgave først. Derefter kan du indsætte elevteksten.</div>
+                  <div class="warning">Undgå at indsætte elevens fulde navn eller andre personlige oplysninger. Brug kun AI-værktøjer, som din skole/kommune tillader.</div>
+                  <textarea id="studentText" placeholder="Indsæt elevteksten her, når du har oprettet eller valgt en opgave." disabled></textarea>
+                  <div class="hint">Teksten bruges kun til at danne prompten i din browser. Denne side sender ikke noget til en server.</div>
+                </div>
+
+                <button type="button" class="button primary full" id="generateBtn">Generér prompt</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="panel" id="promptPanel" aria-label="Genereret prompt" hidden>
+          <div class="panel-head">
+            <h3>2. Kopiér prompten</h3>
+            <p>Sæt prompten ind i dit foretrukne AI-værktøj. Læs altid svaret kritisk og tilpas det til din klasse og din faglige vurdering.</p>
+          </div>
+          <div class="panel-body output-wrap">
+            <textarea id="promptOutput" readonly aria-label="Genereret prompt"></textarea>
+            <div class="output-actions">
+              <div class="status" id="copyStatus" aria-live="polite"></div>
+              <button type="button" class="button primary" id="copyBtn">Kopiér prompt</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="container section" id="fremtid" aria-labelledby="future-title">
+      <div class="section-heading">
+        <div>
+          <div class="small-caps">Produktplatform</div>
+          <h2 id="future-title">Fremtidige produkter, der passer naturligt ind.</h2>
+          <p>Når det første værktøj er testet, kan siden udvides med produkter, der bygger på samme målgruppe og samme løfte: mindre forberedelsestid, mere faglig kvalitet.</p>
+        </div>
+      </div>
+      <div class="roadmap">
+        <article class="card">
+          <h3>Gratis og billige indgange</h3>
+          <ul class="roadmap-list">
+            <li>Promptgenerator til forældremails</li>
+            <li>Promptgenerator til differentierede opgaver</li>
+            <li>Gratis “5 prompts til bedre feedback”-PDF</li>
+            <li>Mini-guide til ansvarlig AI-brug i lærerarbejdet</li>
+            <li>Eksempelbank med anonymiserede tekstuddrag</li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3>Betalte produkter senere</h3>
+          <ul class="roadmap-list">
+            <li>PDF-opgavepakker til dansk i udskolingen</li>
+            <li>Google Docs-skabeloner til rubrics og respons</li>
+            <li>Årsplansværktøj med mål, aktiviteter og evaluering</li>
+            <li>Premium promptpakker til feedback, forløb og evaluering</li>
+            <li>Kort onlinekursus: “AI som feedbackmakker”</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="container section" id="model" aria-labelledby="model-title">
+      <div class="pricing-note">
+        <div class="small-caps">Anbefalet kommerciel retning</div>
+        <h2 id="model-title">Start med freemium + enkeltkøb. Vent med abonnement.</h2>
+        <p>Den bedste model i starten er en kombination: gratis værktøjer, der skaber tillid og trafik, samt små betalte produkter som promptpakker, PDF-materialer og skabeloner. Abonnement kan komme senere, når du har et katalog, en e-mailliste og bevis for gentagen efterspørgsel.</p>
+        <p><strong>MVP-retning:</strong> 1 gratis generator → 1 gratis PDF-smagsprøve → 1 betalt feedbackpakke til 79-149 kr. → senere bundle eller skolelicens.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="container">
+    <strong>Lærerværktøjer</strong> — første version. Ingen login, ingen serverbehandling af elevtekster, og altid med læreren som faglig beslutningstager.
+  </footer>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const ASSIGNMENT_STORAGE_KEY = 'laerervaerktoejer.feedbackAssignments.v1';
+    const PDFJS_SCRIPT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const PDF_IMAGE_PAGE_LIMIT = 4;
+    let activeAssignmentId = '';
+    let assignmentDraftStarted = false;
+    let activePdfSourceName = '';
+    let activePdfPageCount = 0;
+    let activePdfAttachments = [];
+
+    function getFeedbackInstruction(level) {
+      const levels = {
+        kort: `Giv meget kort feedback: højst 120 ord i alt. Skriv 1 kort samlet vurdering, højst 2 styrker, højst 2 forbedringspunkter og 1-2 konkrete næste skridt.`,
+        almindelig: `Giv almindelig, men stadig kort feedback: højst 220 ord i alt. Lav en balanceret vurdering med få tydelige styrker, centrale forbedringsområder og konkrete næste skridt.`,
+        grundig: `Giv grundig feedback, men undgå lange afsnit: højst 380 ord i alt. Brug kun få konkrete eksempler fra teksten og saml forklaringerne i korte, brugbare punkter.`
+      };
+      return levels[level] || levels.almindelig;
+    }
+
+    function getAudienceInstruction(audience) {
+      const audiences = {
+        eleven: `Skriv feedbacken direkte til eleven i et venligt, respektfuldt og elevforståeligt sprog.`,
+        laereren: `Skriv feedbacken til læreren som et fagligt beslutningsgrundlag. Gør det tydeligt, hvad læreren bør være opmærksom på.`,
+        begge: `Del svaret i to dele: først et kort fagligt overblik til læreren, derefter en elevvenlig feedbacktekst, der kan deles eller tilpasses.`
+      };
+      return audiences[audience] || audiences.eleven;
+    }
+
+    function loadAssignments() {
+      try {
+        return JSON.parse(localStorage.getItem(ASSIGNMENT_STORAGE_KEY) || '[]');
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveAssignments(assignments) {
+      localStorage.setItem(ASSIGNMENT_STORAGE_KEY, JSON.stringify(assignments));
+    }
+
+    function trySaveAssignments(assignments) {
+      try {
+        saveAssignments(assignments);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function resetPdfImport() {
+      activePdfSourceName = '';
+      activePdfPageCount = 0;
+      activePdfAttachments = [];
+      renderPdfAttachments();
+    }
+
+    function renderPdfAttachments() {
+      const section = $('pdfAttachmentSection');
+      const grid = $('pdfAttachmentGrid');
+      const hint = $('pdfAttachmentHint');
+      grid.innerHTML = '';
+      section.hidden = activePdfAttachments.length === 0;
+
+      if (!activePdfAttachments.length) return;
+
+      const pageLimitNote = activePdfPageCount > activePdfAttachments.length
+        ? ` De første ${activePdfAttachments.length} af ${activePdfPageCount} sider er gemt som sidebilleder for at holde browserens lokale lager nede.`
+        : '';
+      hint.textContent = `${activePdfAttachments.length} sidebillede${activePdfAttachments.length === 1 ? '' : 'r'} fra ${activePdfSourceName || 'PDF'} er gemt med opgaven.${pageLimitNote} Hvis billedindholdet er vigtigt, så vedhæft PDF'en eller sidebillederne i det AI-værktøj, du bruger sammen med prompten.`;
+
+      activePdfAttachments.forEach((attachment) => {
+        const item = document.createElement('div');
+        item.className = 'pdf-page-thumb';
+
+        const img = document.createElement('img');
+        img.src = attachment.dataUrl;
+        img.alt = `Side ${attachment.pageNumber} fra PDF`;
+
+        const caption = document.createElement('span');
+        caption.textContent = `Side ${attachment.pageNumber}`;
+
+        item.appendChild(img);
+        item.appendChild(caption);
+        grid.appendChild(item);
+      });
+    }
+
+    function loadPdfJs() {
+      if (window.pdfjsLib) {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+        return Promise.resolve(window.pdfjsLib);
+      }
+
+      return new Promise((resolve, reject) => {
+        const existingScript = document.querySelector(`script[src="${PDFJS_SCRIPT_URL}"]`);
+        const script = existingScript || document.createElement('script');
+
+        script.onload = () => {
+          if (!window.pdfjsLib) {
+            reject(new Error('PDF-læseren kunne ikke startes.'));
+            return;
+          }
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+          resolve(window.pdfjsLib);
+        };
+        script.onerror = () => reject(new Error('PDF-læseren kunne ikke hentes. Tjek internetforbindelsen og prøv igen.'));
+
+        if (!existingScript) {
+          script.src = PDFJS_SCRIPT_URL;
+          script.defer = true;
+          document.head.appendChild(script);
+        }
+      });
+    }
+
+    function textFromPdfItems(items) {
+      const lines = [];
+      let line = '';
+      let lastY = null;
+
+      items.forEach((item) => {
+        const text = (item.str || '').trim();
+        if (!text) return;
+
+        const y = Math.round(item.transform ? item.transform[5] : 0);
+        const startsNewLine = lastY !== null && Math.abs(y - lastY) > 5;
+        if (startsNewLine && line) {
+          lines.push(line.trim());
+          line = '';
+        }
+
+        line += `${line ? ' ' : ''}${text}`;
+        if (item.hasEOL) {
+          lines.push(line.trim());
+          line = '';
+        }
+        lastY = y;
+      });
+
+      if (line) lines.push(line.trim());
+      return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+
+    async function renderPdfPageImage(page, pageNumber) {
+      const baseViewport = page.getViewport({ scale: 1 });
+      const targetWidth = 880;
+      const scale = Math.min(1.6, targetWidth / baseViewport.width);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d', { alpha: false });
+
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+
+      return {
+        pageNumber,
+        dataUrl: canvas.toDataURL('image/jpeg', 0.72)
+      };
+    }
+
+    async function extractPdfAssignment(file) {
+      const pdfjsLib = await loadPdfJs();
+      const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pages = [];
+      const attachments = [];
+
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const textContent = await page.getTextContent();
+        const pageText = textFromPdfItems(textContent.items);
+        if (pageText) pages.push(`Side ${pageNumber}:\n${pageText}`);
+
+        if (pageNumber <= PDF_IMAGE_PAGE_LIMIT) {
+          attachments.push(await renderPdfPageImage(page, pageNumber));
+        }
+      }
+
+      return {
+        pageCount: pdf.numPages,
+        text: pages.join('\n\n').trim(),
+        attachments
+      };
+    }
+
+    function cleanPdfFileName(fileName) {
+      return fileName.replace(/\.pdf$/i, '').replace(/[-_]+/g, ' ').replace(/^[\s.]+/, '').trim() || 'Opgave fra PDF';
+    }
+
+    function currentAssignmentSettings() {
+      return {
+        name: $('assignmentName').value.trim(),
+        assignmentDescription: $('assignmentDescription').value.trim(),
+        subject: $('subject').value,
+        grade: $('grade').value,
+        feedbackLevel: document.querySelector('input[name="feedbackLevel"]:checked').value,
+        audience: $('audience').value,
+        gradeEstimate: $('gradeEstimate').value,
+        genreMode: $('genreMode').value,
+        genre: $('genre').value.trim(),
+        focusPoints: $('focusPoints').value.trim(),
+        pdfSourceName: activePdfSourceName,
+        pdfPageCount: activePdfPageCount,
+        pdfAttachments: activePdfAttachments,
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function setFeedbackLevel(level) {
+      const radio = document.querySelector(`input[name="feedbackLevel"][value="${level}"]`);
+      if (radio) radio.checked = true;
+    }
+
+    function applyAssignmentSettings(settings) {
+      $('assignmentName').value = settings.name || '';
+      $('assignmentDescription').value = settings.assignmentDescription || '';
+      $('subject').value = settings.subject || 'Dansk';
+      $('grade').value = settings.grade || '7. klasse';
+      setFeedbackLevel(settings.feedbackLevel || 'kort');
+      $('audience').value = settings.audience || 'eleven';
+      $('gradeEstimate').value = settings.gradeEstimate || 'nej';
+      $('genreMode').value = settings.genreMode || 'manual';
+      $('genre').value = settings.genre || '';
+      $('focusPoints').value = settings.focusPoints || '';
+      activePdfSourceName = settings.pdfSourceName || '';
+      activePdfPageCount = settings.pdfPageCount || 0;
+      activePdfAttachments = Array.isArray(settings.pdfAttachments) ? settings.pdfAttachments : [];
+      renderPdfAttachments();
+      updatePrompt();
+    }
+
+    function renderAssignments(selectedId = '') {
+      const select = $('savedAssignments');
+      const assignments = loadAssignments().sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+      select.innerHTML = '';
+      $('savedAssignmentPicker').hidden = assignments.length === 0;
+
+      const emptyOption = document.createElement('option');
+      emptyOption.value = '';
+      emptyOption.textContent = assignments.length ? 'Vælg en gemt opgave' : 'Ingen gemte opgaver endnu';
+      select.appendChild(emptyOption);
+
+      assignments.forEach((assignment) => {
+        const option = document.createElement('option');
+        option.value = assignment.id;
+        option.textContent = assignment.name;
+        select.appendChild(option);
+      });
+
+      select.value = selectedId;
+    }
+
+    function updateFlowVisibility() {
+      const hasAssignmentSetup = assignmentDraftStarted || Boolean(activeAssignmentId);
+      const hasSavedAssignment = Boolean(activeAssignmentId);
+      $('startCard').hidden = hasAssignmentSetup;
+      $('assignmentFlow').hidden = !hasAssignmentSetup;
+      $('studentFlow').hidden = !hasSavedAssignment;
+      $('promptPanel').hidden = !hasSavedAssignment;
+      $('saveAssignmentBtn').textContent = hasSavedAssignment ? 'Gem ændringer' : 'Opret opgave';
+      $('deleteAssignmentBtn').hidden = !$('savedAssignments').value;
+    }
+
+    async function importAssignmentFromPdf(event) {
+      const file = event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+
+      if (!file.name.toLowerCase().endsWith('.pdf')) {
+        $('pdfImportStatus').textContent = 'Vælg en PDF-fil.';
+        $('pdfImportStatus').classList.add('error');
+        return;
+      }
+
+      $('pdfImportStatus').classList.remove('error');
+      $('pdfImportStatus').textContent = 'Læser PDF lokalt i browseren...';
+      $('pdfImportBtn').disabled = true;
+      $('newAssignmentBtn').disabled = true;
+
+      try {
+        const extraction = await extractPdfAssignment(file);
+        const name = cleanPdfFileName(file.name);
+        const assignmentDescription = extraction.text || `[PDF'en kunne ikke læses som tekst. Gennemse sidebillederne fra ${file.name}, og indsæt eventuelt opgavebeskrivelsen manuelt.]`;
+        let importWarning = '';
+        const assignment = {
+          id: `assignment-${Date.now()}`,
+          name,
+          assignmentDescription,
+          subject: 'Dansk',
+          grade: '7. klasse',
+          feedbackLevel: 'kort',
+          audience: 'eleven',
+          gradeEstimate: 'nej',
+          genreMode: 'manual',
+          genre: 'argumenterende tekst',
+          focusPoints: 'struktur, argumentation, sprog og konkrete forbedringsforslag',
+          pdfSourceName: file.name,
+          pdfPageCount: extraction.pageCount,
+          pdfAttachments: extraction.attachments,
+          updatedAt: new Date().toISOString()
+        };
+
+        const assignments = loadAssignments();
+        assignments.push(assignment);
+
+        if (!trySaveAssignments(assignments)) {
+          assignment.pdfAttachments = [];
+          activePdfAttachments = [];
+          if (!trySaveAssignments(assignments)) throw new Error('Opgaven kunne ikke gemmes i browseren.');
+          importWarning = ' Sidebillederne var for store til browserens lokale lager og blev derfor ikke gemt.';
+        }
+
+        activeAssignmentId = assignment.id;
+        assignmentDraftStarted = false;
+        renderAssignments(assignment.id);
+        applyAssignmentSettings(assignment);
+        setStudentEntryEnabled(true);
+        updatePrompt();
+        $('pdfImportStatus').textContent = '';
+        const imageReviewText = assignment.pdfAttachments.length ? ' og sidebillederne' : '';
+        $('assignmentStatus').textContent = `Preset'et “${assignment.name}” er oprettet fra PDF'en uden elevtekst. Gennemse opgavebeskrivelsen${imageReviewText}, og indsæt først elevtekst, når du vil bruge opgaven.${importWarning}`;
+      } catch (error) {
+        activeAssignmentId = '';
+        assignmentDraftStarted = false;
+        resetPdfImport();
+        updateFlowVisibility();
+        $('pdfImportStatus').classList.add('error');
+        $('pdfImportStatus').textContent = error.message || 'PDF’en kunne ikke læses. Prøv en anden PDF eller indsæt teksten manuelt.';
+      } finally {
+        $('pdfImportBtn').disabled = false;
+        $('newAssignmentBtn').disabled = false;
+      }
+    }
+
+    function saveCurrentAssignment() {
+      const settings = currentAssignmentSettings();
+      if (!settings.name) {
+        $('assignmentStatus').textContent = 'Skriv et navn på opgaven først.';
+        return;
+      }
+
+      const assignments = loadAssignments();
+      const selectedId = $('savedAssignments').value;
+      const existingIndex = selectedId ? assignments.findIndex((item) => item.id === selectedId) : -1;
+      const assignment = {
+        ...settings,
+        id: existingIndex >= 0 ? assignments[existingIndex].id : `assignment-${Date.now()}`
+      };
+
+      if (existingIndex >= 0) {
+        assignments[existingIndex] = assignment;
+      } else {
+        assignments.push(assignment);
+      }
+
+      saveAssignments(assignments);
+      activeAssignmentId = assignment.id;
+      assignmentDraftStarted = false;
+      renderAssignments(assignment.id);
+      setStudentEntryEnabled(true);
+      updatePrompt();
+      $('assignmentStatus').textContent = `Preset'et “${assignment.name}” er gemt uden elevtekst. Du kan åbne opgaven igen senere eller indsætte elevtekst nu, hvis du vil bruge den med det samme.`;
+    }
+
+    function loadSelectedAssignment() {
+      const selectedId = $('savedAssignments').value;
+      if (!selectedId) return;
+      const assignment = loadAssignments().find((item) => item.id === selectedId);
+      if (!assignment) return;
+      activeAssignmentId = assignment.id;
+      assignmentDraftStarted = false;
+      applyAssignmentSettings(assignment);
+      setStudentEntryEnabled(true);
+      $('studentText').value = '';
+      updatePrompt();
+      $('assignmentStatus').textContent = `Preset'et “${assignment.name}” er åbnet. Indsæt nu elevteksten for den elev, du arbejder med.`;
+      $('studentText').focus();
+    }
+
+    function deleteSelectedAssignment() {
+      const selectedId = $('savedAssignments').value;
+      if (!selectedId) {
+        $('assignmentStatus').textContent = 'Vælg en gemt opgave, før du sletter.';
+        return;
+      }
+      const assignments = loadAssignments();
+      const deleted = assignments.find((item) => item.id === selectedId);
+      saveAssignments(assignments.filter((item) => item.id !== selectedId));
+      activeAssignmentId = '';
+      assignmentDraftStarted = false;
+      resetPdfImport();
+      renderAssignments();
+      setStudentEntryEnabled(false);
+      $('studentText').value = '';
+      updatePrompt();
+      $('assignmentStatus').textContent = deleted ? `Preset'et “${deleted.name}” er slettet. Opret eller vælg en ny opgave for at fortsætte.` : 'Opgaven er slettet.';
+    }
+
+    function setStudentEntryEnabled(enabled) {
+      $('studentText').disabled = !enabled;
+      $('generateBtn').disabled = !enabled;
+      $('copyBtn').disabled = !enabled;
+      $('studentStep').classList.toggle('locked', !enabled);
+      updateFlowVisibility();
+    }
+
+    function startNewAssignment() {
+      activeAssignmentId = '';
+      assignmentDraftStarted = true;
+      $('savedAssignments').value = '';
+      $('assignmentName').value = '';
+      $('assignmentDescription').value = '';
+      $('subject').value = 'Dansk';
+      $('grade').value = '7. klasse';
+      setFeedbackLevel('kort');
+      $('audience').value = 'eleven';
+      $('gradeEstimate').value = 'nej';
+      $('genreMode').value = 'manual';
+      $('genre').value = 'argumenterende tekst';
+      $('focusPoints').value = 'struktur, argumentation, sprog og konkrete forbedringsforslag';
+      $('studentText').value = '';
+      resetPdfImport();
+      setStudentEntryEnabled(false);
+      updatePrompt();
+      $('assignmentStatus').textContent = 'Ny opgave startet. Udfyld preset’et og klik “Opret opgave”. Elevtekstfeltet vises først bagefter.';
+      $('assignmentName').focus();
+    }
+
+    function buildPrompt() {
+      if (!activeAssignmentId) {
+        return assignmentDraftStarted
+          ? `Trin 1: Udfyld og opret opgave-preset'et.
+
+Preset'et gemmes uden elevtekst. Når opgaven er oprettet, kan du indsætte elevtekster og kopiere en færdig feedbackprompt.`
+          : `Start her:
+
+1. Klik “Opret ny opgave”, eller vælg en gemt opgave.
+2. Udfyld og opret opgave-preset'et uden elevtekst.
+3. Indsæt først elevteksten, når opgaven er oprettet eller valgt.
+4. Kopiér prompten til dit godkendte AI-værktøj.`;
+      }
+
+      const text = $('studentText').value.trim();
+      const assignmentDescription = $('assignmentDescription').value.trim();
+      const subject = $('subject').value;
+      const grade = $('grade').value;
+      const level = document.querySelector('input[name="feedbackLevel"]:checked').value;
+      const audience = $('audience').value;
+      const gradeEstimate = $('gradeEstimate').value;
+      const genreMode = $('genreMode').value;
+      const genre = $('genre').value.trim();
+      const focusPoints = $('focusPoints').value.trim();
+
+      const assignmentBlock = assignmentDescription
+        ? assignmentDescription
+        : `[Indsæt opgavebeskrivelsen her, hvis den skal bruges som vurderingsgrundlag.]`;
+
+      const pdfMaterialBlock = activePdfAttachments.length
+        ? `\nPDF-materiale:\nDer er importeret ${activePdfAttachments.length} sidebillede${activePdfAttachments.length === 1 ? '' : 'r'} fra opgave-PDF'en${activePdfSourceName ? ` “${activePdfSourceName}”` : ''}. Hvis PDF'en eller sidebillederne er vedhæftet i AI-værktøjet, skal du bruge dem som supplerende vurderingsgrundlag. Hvis de ikke er vedhæftet, må du kun bruge opgavebeskrivelsen ovenfor og skal være tydelig om usikkerhed ved visuelt materiale.\n`
+        : '';
+
+      const genreLine = genreMode === 'unknown'
+        ? `Genren/teksttypen er ukendt. Giv kun et forsigtigt bud på teksttypen, og vær tydelig om usikkerhed. Brug ikke gættet som et sikkert vurderingsgrundlag.`
+        : `Genre/teksttype: ${genre || 'ikke angivet'}. Tag hensyn til genren, men opfind ikke genrekrav, som ikke fremgår af opgavebeskrivelsen, teksten eller lærerens oplysninger.`;
+
+      const gradeLine = gradeEstimate === 'ja'
+        ? `Giv til sidst et forsigtigt og vejledende karakterbud, hvis vurderingsgrundlaget er tilstrækkeligt. Forklar kort usikkerheden. Hvis grundlaget er for uklart, skal du sige det i stedet for at give en sikker karakter.`
+        : `Giv ikke karakter eller karakterbud.`;
+
+      const textBlock = text
+        ? text
+        : `[Indsæt elevteksten her, efter at navne og personlige oplysninger er fjernet.]`;
+
+      return `Du er en erfaren dansk folkeskolelærer og faglig feedbackmakker. Hjælp med at give konkret, konstruktiv og professionel feedback på en elevtekst.
+
+Kontekst:
+- Fag: ${subject}
+- Klassetrin: ${grade}
+- ${genreLine}
+- Særlige fokuspunkter: ${focusPoints || 'ingen særlige fokuspunkter angivet'}
+- Modtager af feedbacken: ${$('audience').selectedOptions[0].text}
+- Feedbackniveau: ${level}
+
+Opgavebeskrivelse / vurderingsgrundlag:
+"""
+${assignmentBlock}
+"""
+${pdfMaterialBlock}
+
+Vigtige krav til din feedback:
+1. ${getAudienceInstruction(audience)}
+2. ${getFeedbackInstruction(level)}
+3. Brug opgavebeskrivelsen som primært vurderingsgrundlag, hvis den er angivet.
+4. Tag hensyn til fag, klassetrin og genre/teksttype.
+5. Fokuser på de vigtigste styrker og de vigtigste forbedringspunkter.
+6. Giv konkrete forslag til, hvordan teksten kan forbedres i forhold til opgaven.
+7. Vær tydelig om usikkerhed, især hvis genre, opgaveformulering eller vurderingsgrundlag er uklart.
+8. Opfind ikke krav, bedømmelseskriterier eller informationer, som ikke fremgår af opgavebeskrivelsen, teksten eller oplysningerne ovenfor.
+9. Undgå at rette hele teksten linje for linje, medmindre det er nødvendigt for at forklare et centralt forbedringspunkt.
+10. Skriv korte afsnit eller punktopstillinger. Skær gentagelser og generelle forklaringer væk.
+11. Brug et professionelt og anerkendende sprog.
+12. ${gradeLine}
+
+Foreslået svarstruktur:
+- Kort samlet vurdering
+- 1-2 vigtigste styrker
+- 1-2 vigtigste forbedringsområder
+- 1-2 konkrete næste skridt
+${gradeEstimate === 'ja' ? '- Eventuelt vejledende karakterbud med tydelig usikkerhed' : ''}
+
+Elevtekst:
+"""
+${textBlock}
+"""`;
+    }
+
+    function updatePrompt() {
+      $('promptOutput').value = buildPrompt();
+      $('copyStatus').textContent = '';
+    }
+
+    async function copyPrompt() {
+      const output = $('promptOutput');
+      output.select();
+      output.setSelectionRange(0, 999999);
+      try {
+        await navigator.clipboard.writeText(output.value);
+        $('copyStatus').textContent = 'Prompten er kopieret.';
+      } catch (error) {
+        document.execCommand('copy');
+        $('copyStatus').textContent = 'Prompten er markeret/kopieret. Brug evt. Ctrl+C.';
+      }
+    }
+
+    $('generateBtn').addEventListener('click', updatePrompt);
+    $('copyBtn').addEventListener('click', copyPrompt);
+    $('newAssignmentBtn').addEventListener('click', startNewAssignment);
+    $('pdfImportBtn').addEventListener('click', () => $('pdfImportInput').click());
+    $('pdfImportInput').addEventListener('change', importAssignmentFromPdf);
+    $('saveAssignmentBtn').addEventListener('click', saveCurrentAssignment);
+    $('deleteAssignmentBtn').addEventListener('click', deleteSelectedAssignment);
+    $('savedAssignments').addEventListener('change', loadSelectedAssignment);
+
+    ['assignmentName', 'assignmentDescription', 'studentText', 'subject', 'grade', 'audience', 'gradeEstimate', 'genreMode', 'genre', 'focusPoints'].forEach((id) => {
+      $(id).addEventListener('input', updatePrompt);
+      $(id).addEventListener('change', updatePrompt);
+    });
+    document.querySelectorAll('input[name="feedbackLevel"]').forEach((radio) => {
+      radio.addEventListener('change', updatePrompt);
+    });
+
+    renderAssignments();
+    setStudentEntryEnabled(false);
+    updatePrompt();
+  </script>
+</body>
+</html>
